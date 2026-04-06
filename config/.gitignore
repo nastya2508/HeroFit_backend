@@ -1,0 +1,12 @@
+# Python
+*.pyc
+__pycache__/
+
+# Virtual Environment
+venv/
+
+# Database (мої паролі та тестові дані)
+db.sqlite3
+
+# macOS
+.DS_Store
