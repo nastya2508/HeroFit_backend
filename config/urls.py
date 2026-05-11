@@ -4,16 +4,19 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-# Додали нові View в імпорт
+# Додали ItemListView в імпорт
 from users.views import (
-    LeaderboardView, UserProfileView, ExerciseListView, 
+    RegisterView, LeaderboardView, UserProfileView, ExerciseListView, 
     CompleteExerciseView, PurchaseItemView, NotificationListView,
-    CreateTeamView, TeamListView
+    CreateTeamView, TeamListView, ItemListView
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # Реєстрація
+    path('api/register/', RegisterView.as_view(), name='register'),
     
     # Логін та токени
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -27,7 +30,8 @@ urlpatterns = [
     # Рейтинг (Лідерборд)
     path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
 
-    # Магазин та Предмети
+    # --- МАГАЗИН ---
+    path('api/shop/items/', ItemListView.as_view(), name='item-list'), # Шлях до списку товарів
     path('api/shop/purchase/<int:pk>/', PurchaseItemView.as_view(), name='purchase-item'),
 
     # Сповіщення
@@ -40,4 +44,11 @@ urlpatterns = [
     # Документація (Swagger)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+
+    # Цей шлях видає ОБИДВА токени при логіні
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # Цей шлях видає НОВИЙ access токен, якщо ти даєш йому refresh
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
 ]

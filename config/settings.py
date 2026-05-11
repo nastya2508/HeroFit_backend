@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-mycl%#albiyxlk)k1zm=fzq2uor4i%2t8pmj7ggx9%onnwd-#x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -41,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'drf_spectacular',
+    
 
 ]
 
@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
+    
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -149,5 +150,15 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # Короткий ключ
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Довгий ключ
+    'ROTATE_REFRESH_TOKENS': True,                 # Видавати новий Refresh при кожному оновленні
+    'BLACKLIST_AFTER_ROTATION': True,              # Старий Refresh стає недійсним (безпека!)
     'AUTH_HEADER_TYPES': ('Bearer',),
 }

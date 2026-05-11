@@ -1,19 +1,37 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics, status
 
 # Додали Notification в імпорт моделей
 from .models import (
     Profile, Exercise, CompletedExercise, Hero, 
-    UserActivity, Achievement, UserAchievement, Item, Inventory, Notification
+    UserActivity, Achievement, UserAchievement, Item, Inventory, Notification, Team
 )
-from .serializers import ExerciseSerializer
+# ДОДАНО ItemSerializer
+from .serializers import ExerciseSerializer, RegisterSerializer, ItemSerializer
+
+# --- НОВИЙ КОД: Реєстрація з вибором типу тіла ---
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Користувача успішно створено!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ExerciseListView(generics.ListAPIView):
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
+    permission_classes = [] 
+
+# --- НОВИЙ КОД: Список товарів для магазину ---
+class ItemListView(generics.ListAPIView):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
     permission_classes = [] 
 
 class UserProfileView(APIView):
@@ -21,9 +39,24 @@ class UserProfileView(APIView):
 
     def get(self, request):
         profile = request.user.profile
+        hero = profile.hero
+        
+        # --- НОВИЙ КОД: Перевірка на лінь і зміна тіла ---
+        # Спочатку перевіряємо, чи зміниться здоров'я
+        old_hp = profile.hp
         profile.check_health() 
         
-        hero = profile.hero 
+        # Якщо здоров'я зменшилося (штраф за лінь) і герой не пухлий
+        if profile.hp < old_hp and hero.body_type != 'PLUMP':
+            hero.body_type = 'PLUMP'
+            hero.image_url = 'image_10.png'
+            hero.save()
+            Notification.objects.create(
+                user=request.user,
+                title="⚠️ Ваш персонаж змінився!",
+                message="Ой! Ви давно не займалися. Ваш персонаж набрав вагу. Поверніться до тренувань, щоб відновити форму!"
+            )
+        
         return Response({
             "username": request.user.username,
             "hp": profile.hp,
@@ -35,7 +68,9 @@ class UserProfileView(APIView):
             "hero": {
                 "name": hero.name,
                 "strength": hero.strength,
-                "stamina": hero.stamina
+                "stamina": hero.stamina,
+                "body_type": hero.body_type,      # Додано для фронтенду
+                "image_url": hero.image_url       # Додано для фронтенду
             }
         })
 
@@ -85,13 +120,36 @@ class CompleteExerciseView(APIView):
 
             profile.update_streak() 
             check_achievements(user)
+            
+            # --- НОВИЙ КОД: Перевірка на накаченість або повернення у форму ---
+            # Якщо стрік досяг 7 днів і герой ще не накачений
+            if profile.streak_days >= 7 and hero.body_type != 'MUSCULAR':
+                hero.body_type = 'MUSCULAR'
+                hero.image_url = 'image_9.png'
+                hero.save()
+                Notification.objects.create(
+                    user=user,
+                    title="💪 Ви у чудовій формі!",
+                    message="Чудова робота! Ваша регулярність дає плоди. Ви стали накаченим!"
+                )
+            # Якщо герой був пухким, але почав займатися, повертаємо його у звичайний стан
+            elif profile.streak_days >= 1 and hero.body_type == 'PLUMP':
+                hero.body_type = 'NORMAL'
+                hero.image_url = 'image_11.png'
+                hero.save()
+                Notification.objects.create(
+                    user=user,
+                    title="🔥 Форма відновлюється!",
+                    message="Ви повернулися до тренувань і скинули зайву вагу. Продовжуйте в тому ж дусі!"
+                )
 
             return Response({
                 "status": "success",
                 "added_points": exercise.points_reward,
                 "current_points": profile.fire_points, 
                 "current_hp": profile.hp,
-                "current_streak": profile.streak_days
+                "current_streak": profile.streak_days,
+                "hero_image": hero.image_url # Повертаємо нову картинку, якщо вона змінилась
             }, status=status.HTTP_201_CREATED)
 
         except Exercise.DoesNotExist:
@@ -113,6 +171,10 @@ class PurchaseItemView(APIView):
             hero.strength += item.strength_bonus
             profile.hp = min(100, profile.hp + item.hp_bonus)
             
+            # --- НОВИЙ КОД: Одягаємо костюм, якщо це скін ---
+            if item.is_skin and item.skin_image_url:
+                hero.image_url = item.skin_image_url
+
             profile.save()
             hero.save()
 
@@ -129,7 +191,8 @@ class PurchaseItemView(APIView):
                 "message": f"Ви купили {item.name}!",
                 "remaining_points": profile.fire_points,
                 "new_strength": hero.strength,
-                "new_hp": profile.hp
+                "new_hp": profile.hp,
+                "hero_image": hero.image_url # Відправляємо нову картинку на фронтенд
             }, status=status.HTTP_200_OK)
 
         except Item.DoesNotExist:
@@ -202,4 +265,4 @@ class TeamListView(APIView):
             "captain": t.captain.username if t.captain else "Немає"
         } for t in sorted_teams]
         
-        return Response(data)    
+        return Response(data)

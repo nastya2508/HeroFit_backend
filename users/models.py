@@ -76,30 +76,35 @@ class Profile(models.Model):
                 self.save()    
 
 class Hero(models.Model):
+    BODY_TYPE_CHOICES = [
+        ('NORMAL', 'Звичайний'),
+        ('MUSCULAR', 'Накачений'),
+        ('PLUMP', 'Пухлий'),
+    ]
+
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='hero')
     name = models.CharField(max_length=100, default="Мій Герой")
     strength = models.IntegerField(default=10)   
     stamina = models.IntegerField(default=10)    
     intelligence = models.IntegerField(default=10) 
     
+    # Нові поля для візуалізації
+    body_type = models.CharField(
+        max_length=20, 
+        choices=BODY_TYPE_CHOICES, 
+        default='NORMAL', 
+        verbose_name="Тип тіла"
+    )
+    image_url = models.CharField(
+        max_length=255, 
+        default='image_11.png', 
+        verbose_name="Назва файлу картинки"
+    )
+    
     def __str__(self):
         return f"Герой: {self.name} (Власник: {self.profile.user.username})"
-
-# Сигнали
-@receiver(post_save, sender=Profile)
-def create_hero(sender, instance, created, **kwargs):
-    if created:
-        Hero.objects.create(profile=instance)
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
-
+    
+    
 class Exercise(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -170,6 +175,10 @@ class Item(models.Model):
     strength_bonus = models.IntegerField(default=0, verbose_name="Бонус до сили")
     hp_bonus = models.IntegerField(default=0, verbose_name="Бонус до здоров'я")
     icon = models.CharField(max_length=50, default="🛡️")
+    
+    # --- НОВІ ПОЛЯ ДЛЯ КОСТЮМІВ (СКІНІВ) ---
+    is_skin = models.BooleanField(default=False, verbose_name="Це скін (костюм)?")
+    skin_image_url = models.CharField(max_length=255, blank=True, null=True, verbose_name="Файл скіна (напр. image_1.png)")
 
     def __str__(self):
         return f"{self.name} ({self.price} FP)"
