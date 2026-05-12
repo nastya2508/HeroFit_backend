@@ -131,6 +131,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://herofit.vercel.app",
+    "https://hero-fit-oryo.vercel.app",
+    "https://hero-fit-oryo-9ly5453xg-nastya2508s-projects.vercel.app", # Адреса з твого останнього деплою
+    "http://localhost:3000",
     
 ]
 
