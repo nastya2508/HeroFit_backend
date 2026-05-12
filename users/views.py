@@ -273,6 +273,6 @@ class TeamListView(APIView):
 def create_admin_once(request):
     if not User.objects.filter(username='nastya').exists():
         # ЗАМІНИ 'твій_пароль' на реальний пароль!
-        User.objects.create_superuser('nastya', 'admin@example.com', 'твій_пароль')
+        User.objects.create_superuser('nastya', 'admin@example.com', '1234')
         return HttpResponse("Адміна 'nastya' створено! Тепер видали цей код.")
     return HttpResponse("Адмін 'nastya' вже існує.")
