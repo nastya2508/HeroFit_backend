@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import generics, status
+from django.contrib.auth.models import User
+from django.http import HttpResponse
 
 # Додали Notification в імпорт моделей
 from .models import (
@@ -266,3 +268,11 @@ class TeamListView(APIView):
         } for t in sorted_teams]
         
         return Response(data)
+    
+
+def create_admin_once(request):
+    if not User.objects.filter(username='nastya').exists():
+        # ЗАМІНИ 'твій_пароль' на реальний пароль!
+        User.objects.create_superuser('nastya', 'admin@example.com', 'твій_пароль')
+        return HttpResponse("Адміна 'nastya' створено! Тепер видали цей код.")
+    return HttpResponse("Адмін 'nastya' вже існує.")

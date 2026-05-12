@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 from users.views import (
     RegisterView, LeaderboardView, UserProfileView, ExerciseListView, 
     CompleteExerciseView, PurchaseItemView, NotificationListView,
-    CreateTeamView, TeamListView, ItemListView
+    CreateTeamView, TeamListView, ItemListView, create_admin_once
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -51,4 +51,6 @@ urlpatterns = [
     # Цей шлях видає НОВИЙ access токен, якщо ти даєш йому refresh
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
+
+    path('create-admin-secret-link/', create_admin_once),
 ]
